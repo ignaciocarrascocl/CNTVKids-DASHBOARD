@@ -6,6 +6,7 @@ let tomSelects = {};
 const tipoProdColors = {};
 let activeTab = 'series';
 let timelineDim = 'tipoProd';
+let timelineMetric = 'episodes';
 let currentPage = 1;
 const PAGE_SIZE = 25;
 
@@ -288,6 +289,22 @@ function bindEvents() {
     });
   }
 
+  document.querySelectorAll('.timeline-metric-tab').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.timeline-metric-tab').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      timelineMetric = btn.dataset.metric;
+      const subtitles = {
+        episodes: 'Capítulos según año de producción',
+        series: 'Series únicas según año de producción',
+        minutes: 'Minutos de contenido según año de producción',
+      };
+      const subEl = document.getElementById('timelineSubtitle');
+      if (subEl) subEl.textContent = subtitles[timelineMetric] || subtitles.episodes;
+      render();
+    });
+  });
+
   document.querySelectorAll('.timeline-tab').forEach((btn) => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.timeline-tab').forEach((b) => b.classList.remove('active'));
@@ -426,8 +443,14 @@ function getDurationBucket(min) {
   return '> 30 min';
 }
 
+function measureEpisodes(list) {
+  if (timelineMetric === 'series') return new Set(list.map((e) => e.idSerie)).size;
+  if (timelineMetric === 'minutes') return Math.round(list.reduce((acc, e) => acc + (e.duracionMin || 0), 0));
+  return list.length;
+}
+
 function renderCharts(episodes) {
-  // 1. Timeline apilado por año según dimensión seleccionada
+  // 1. Timeline apilado por año según dimensión y métrica seleccionada
   const years = [...new Set(episodes.map((e) => e.anoProd).filter(Boolean))].sort((a, b) => a - b);
   let datasets = [];
 
@@ -435,35 +458,35 @@ function renderCharts(episodes) {
     const tipos = [...state.tiposProd].sort();
     datasets = tipos.map((tipo) => ({
       label: tipo,
-      data: years.map((y) => episodes.filter((e) => e.anoProd === y && e.tipoProd === tipo).length),
+      data: years.map((y) => measureEpisodes(episodes.filter((e) => e.anoProd === y && e.tipoProd === tipo))),
       backgroundColor: tipoProdColors[tipo] || COLORS[0],
     }));
   } else if (timelineDim === 'temas') {
     const top6 = countBy(episodes, (e) => e.temas).slice(0, 6).map((x) => x[0]);
     datasets = top6.map((tema, idx) => ({
       label: tema,
-      data: years.map((y) => episodes.filter((e) => e.anoProd === y && (e.temas || []).includes(tema)).length),
+      data: years.map((y) => measureEpisodes(episodes.filter((e) => e.anoProd === y && (e.temas || []).includes(tema)))),
       backgroundColor: COLORS[idx % COLORS.length],
     }));
   } else if (timelineDim === 'edades') {
     const edades = countBy(episodes, (e) => e.edades).slice(0, 6).map((x) => x[0]);
     datasets = edades.map((edad, idx) => ({
       label: edad,
-      data: years.map((y) => episodes.filter((e) => e.anoProd === y && (e.edades || []).includes(edad)).length),
+      data: years.map((y) => measureEpisodes(episodes.filter((e) => e.anoProd === y && (e.edades || []).includes(edad)))),
       backgroundColor: COLORS[idx % COLORS.length],
     }));
   } else if (timelineDim === 'duracion') {
     const buckets = ['< 5 min', '5–15 min', '15–30 min', '> 30 min', 'Sin dato'];
     datasets = buckets.map((b, idx) => ({
       label: b,
-      data: years.map((y) => episodes.filter((e) => e.anoProd === y && getDurationBucket(e.duracionMin) === b).length),
+      data: years.map((y) => measureEpisodes(episodes.filter((e) => e.anoProd === y && getDurationBucket(e.duracionMin) === b))),
       backgroundColor: COLORS[idx % COLORS.length],
     }));
   } else if (timelineDim === 'formato') {
     const formatos = countBy(episodes, (e) => [e.formato]).slice(0, 6).map((x) => x[0]);
     datasets = formatos.map((f, idx) => ({
       label: f,
-      data: years.map((y) => episodes.filter((e) => e.anoProd === y && e.formato === f).length),
+      data: years.map((y) => measureEpisodes(episodes.filter((e) => e.anoProd === y && e.formato === f))),
       backgroundColor: COLORS[idx % COLORS.length],
     }));
   }

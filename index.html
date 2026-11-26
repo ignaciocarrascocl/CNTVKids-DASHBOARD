@@ -130,14 +130,21 @@
         <div class="chart-header chart-header-wrap">
           <div>
             <h2 id="timelineTitle">Evolución por año · Tipo de producción</h2>
-            <span class="chart-hint">Capítulos según año de producción</span>
+            <span id="timelineSubtitle" class="chart-hint">Capítulos según año de producción</span>
           </div>
-          <div class="timeline-tabs" role="tablist" aria-label="Dimensión temporal">
-            <button type="button" class="timeline-tab active" data-dim="tipoProd">Tipo de producción</button>
-            <button type="button" class="timeline-tab" data-dim="temas">Temáticas (Top 6)</button>
-            <button type="button" class="timeline-tab" data-dim="edades">Edades</button>
-            <button type="button" class="timeline-tab" data-dim="duracion">Duración</button>
-            <button type="button" class="timeline-tab" data-dim="formato">Formato</button>
+          <div class="timeline-controls">
+            <div class="timeline-tabs" role="tablist" aria-label="Métrica temporal">
+              <button type="button" class="timeline-metric-tab active" data-metric="episodes">Capítulos</button>
+              <button type="button" class="timeline-metric-tab" data-metric="series">Series</button>
+              <button type="button" class="timeline-metric-tab" data-metric="minutes">Minutos</button>
+            </div>
+            <div class="timeline-tabs" role="tablist" aria-label="Dimensión temporal">
+              <button type="button" class="timeline-tab active" data-dim="tipoProd">Tipo de producción</button>
+              <button type="button" class="timeline-tab" data-dim="temas">Temáticas (Top 6)</button>
+              <button type="button" class="timeline-tab" data-dim="edades">Edades</button>
+              <button type="button" class="timeline-tab" data-dim="duracion">Duración</button>
+              <button type="button" class="timeline-tab" data-dim="formato">Formato</button>
+            </div>
           </div>
         </div>
         <div class="chart-wrap">

@@ -534,6 +534,13 @@ a {
   gap: 10px;
 }
 
+.timeline-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
 .timeline-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -543,7 +550,8 @@ a {
   border-radius: 8px;
 }
 
-.timeline-tab {
+.timeline-tab,
+.timeline-metric-tab {
   border: none;
   background: transparent;
   color: var(--muted);
@@ -555,11 +563,13 @@ a {
   transition: all 0.15s ease;
 }
 
-.timeline-tab:hover {
+.timeline-tab:hover,
+.timeline-metric-tab:hover {
   color: var(--primary);
 }
 
-.timeline-tab.active {
+.timeline-tab.active,
+.timeline-metric-tab.active {
   background: #fff;
   color: var(--primary);
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
