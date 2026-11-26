@@ -1,10 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const SHEET1_URL =
-  'https://docs.google.com/spreadsheets/d/e/2PACX-1vSaO7Pm8QNOFZuvgL5p1IRPnTskgYz6at7y1PDhjwFgA7RuvtfVHRLYgIuOpXO_kvL2SkKlQI2E09Q3/pub?output=csv';
-const SHEET2_URL =
-  'https://docs.google.com/spreadsheets/d/e/2PACX-1vRuxI-HiEi1jmkv8XyUPFb1eOhdoB17bXhERQnSZhI-4CcCrpWYd0_uUhfKdxDZ6MDPx4gf0wLfRQ6A/pub?output=csv';
+const EPISODES_CSV = path.join('data', 'cntvinfantil-dashboard-episodes.csv');
+const SERIES_CSV = path.join('data', 'cntvinfantil-dashboard-series.csv');
+const TEMPORADAS_CSV = path.join('data', 'cntvinfantil-dashboard-temporadas.csv');
 
 const TIPO_PROD_MAP = {
   PP: 'Producción Propia',
@@ -97,14 +96,22 @@ function extractTipoProd(codigo) {
 }
 
 async function main() {
-  const [res1, res2] = await Promise.all([fetch(SHEET1_URL), fetch(SHEET2_URL)]);
-  if (!res1.ok || !res2.ok) {
-    throw new Error(`Error descargando CSVs: ${res1.status} / ${res2.status}`);
-  }
-  const [csv1, csv2] = await Promise.all([res1.text(), res2.text()]);
+  const [csv1, csv2, csv3] = [
+    fs.readFileSync(EPISODES_CSV, 'utf8'),
+    fs.readFileSync(SERIES_CSV, 'utf8'),
+    fs.readFileSync(TEMPORADAS_CSV, 'utf8'),
+  ];
 
   const rawEpisodes = parseCsv(csv1);
   const rawSeries = parseCsv(csv2);
+  const rawTemporadas = parseCsv(csv3);
+
+  const temporadasMap = new Map();
+  for (const t of rawTemporadas) {
+    if (t.id_temporada) {
+      temporadasMap.set(t.id_temporada, t);
+    }
+  }
 
   const seriesMap = new Map();
   for (const s of rawSeries) {
@@ -146,8 +153,9 @@ async function main() {
       ? { code: serie.tipoProdCode, label: serie.tipoProd }
       : extractTipoProd(e.codigo);
 
+    const temp = temporadasMap.get(e.id_temporada);
     const duracionMin = parseDurationMin(e.duracion);
-    const anoProd = Number(e.ano_produccion) || null;
+    const anoProd = Number(e.ano_produccion) || (temp ? Number(temp.ano_produccion) || null : null);
     const anoEstreno = Number(e.ano_estreno) || null;
     const temas = parseListField(e.temas);
     const etiquetas = parseListField(e.etiquetas);
@@ -180,21 +188,23 @@ async function main() {
       anoEstreno,
       temas,
       etiquetas,
-      webPublicado: e.web_publicado === 'TRUE',
-      geoblocking: e.geoblocking === 'TRUE',
+      webPublicado: e.web_publicado === '1' || e.web_publicado === 'TRUE',
+      geoblocking: e.geoblocking === '1' || e.geoblocking === 'TRUE',
       urlSitio: e.url_sitio || '',
       urlYoutube: e.url_youtube || '',
       urlVimeo: e.url_vimeo || '',
     });
   }
 
-  const series = Array.from(seriesMap.values()).map((s) => ({
-    ...s,
-    anosProd: [...s.anosProd].sort((a, b) => a - b),
-    anosEstreno: [...s.anosEstreno].sort((a, b) => a - b),
-    temas: [...s.temas],
-    etiquetas: [...s.etiquetas].slice(0, 30),
-  }));
+  const series = Array.from(seriesMap.values())
+    .filter((s) => s.capitulosCount > 0)
+    .map((s) => ({
+      ...s,
+      anosProd: [...s.anosProd].sort((a, b) => a - b),
+      anosEstreno: [...s.anosEstreno].sort((a, b) => a - b),
+      temas: [...s.temas],
+      etiquetas: [...s.etiquetas].slice(0, 30),
+    }));
 
   const years = episodes.map((e) => e.anoProd).filter(Boolean);
   const out = {
@@ -204,8 +214,23 @@ async function main() {
       maxYear: Math.max(...years),
       totalSeries: series.length,
       totalEpisodes: episodes.length,
+      totalTemporadas: rawTemporadas.length,
     },
     series,
+    temporadas: rawTemporadas
+      .filter((t) => t.id_temporada)
+      .map((t) => ({
+        id: t.id_temporada,
+        codigo: t.codigo || '',
+        nombre: t.nombre || t.display_nombre || `Temporada ${t.temporada_num || ''}`,
+        serieNombre: t.serie_nombre || '',
+        anoProd: Number(t.ano_produccion) || null,
+        adquisicion: t.adquisicion || '',
+        edades: parseListField(t.edades_publico),
+        paises: parseListField(t.paises),
+        productoras: t.productoras || '',
+        derechosVencimiento: t.derechos_vencimiento || '',
+      })),
     episodes,
   };
 

@@ -7,24 +7,29 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.default.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/nouislider@15.7.1/dist/nouislider.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/nouislider@15.7.1/dist/nouislider.min.js"></script>
 </head>
 <body>
   <header class="topbar">
     <div class="topbar-inner">
-      <div>
+      <div class="topbar-brand">
         <h1>CNTV Infantil · Explorador de Catálogo</h1>
-        <p class="subtitle">Análisis de series, capítulos, temáticas y producción para decisiones editoriales</p>
+        <p class="subtitle">Análisis de series, capítulos, temáticas y producción</p>
       </div>
-      <div class="topbar-meta">
-        <span id="dataUpdated" class="badge-muted">Cargando datos...</span>
-        <button id="btnReset" class="btn-secondary" type="button">Limpiar filtros</button>
-      </div>
+      <nav class="topbar-nav" role="tablist" aria-label="Vistas principales">
+        <button type="button" class="view-btn active" data-view="explore">Explorar</button>
+        <button type="button" class="view-btn" data-view="check">Chequeo de Datos</button>
+      </nav>
     </div>
   </header>
 
   <main class="container">
+    <div id="viewExplore" class="view-section">
     <!-- Filtros -->
     <section class="filters-panel card" aria-label="Filtros de exploración">
       <div class="filters-grid">
@@ -34,14 +39,16 @@
         </div>
 
         <div class="filter-group">
-          <label>Año de producción</label>
-          <div class="year-range">
-            <input id="yearMin" type="number" min="1990" max="2030" aria-label="Año desde" />
-            <span>a</span>
-            <input id="yearMax" type="number" min="1990" max="2030" aria-label="Año hasta" />
+          <div class="year-label-row">
+            <label>Año de producción</label>
+            <span id="yearRangeLabel" class="year-range-badge">—</span>
           </div>
+          <div id="yearSlider" class="year-slider"></div>
+          <input id="yearMin" type="hidden" />
+          <input id="yearMax" type="hidden" />
           <div class="presets">
             <button type="button" class="chip-btn" data-range="all">Todo</button>
+            <button type="button" class="chip-btn" data-range="2020-2026">2020–2026</button>
             <button type="button" class="chip-btn" data-range="2015-2019">2015–2019</button>
             <button type="button" class="chip-btn" data-range="2010-2014">2010–2014</button>
             <button type="button" class="chip-btn" data-range="1991-2009">1991–2009</button>
@@ -120,9 +127,18 @@
     <!-- Gráficos -->
     <section class="charts-grid">
       <div class="card chart-card chart-wide">
-        <div class="chart-header">
-          <h2>Producción por año y tipo</h2>
-          <span class="chart-hint">Capítulos según año de producción</span>
+        <div class="chart-header chart-header-wrap">
+          <div>
+            <h2 id="timelineTitle">Evolución por año · Tipo de producción</h2>
+            <span class="chart-hint">Capítulos según año de producción</span>
+          </div>
+          <div class="timeline-tabs" role="tablist" aria-label="Dimensión temporal">
+            <button type="button" class="timeline-tab active" data-dim="tipoProd">Tipo de producción</button>
+            <button type="button" class="timeline-tab" data-dim="temas">Temáticas (Top 6)</button>
+            <button type="button" class="timeline-tab" data-dim="edades">Edades</button>
+            <button type="button" class="timeline-tab" data-dim="duracion">Duración</button>
+            <button type="button" class="timeline-tab" data-dim="formato">Formato</button>
+          </div>
         </div>
         <div class="chart-wrap">
           <canvas id="chartTimeline"></canvas>
@@ -196,6 +212,81 @@
         <button id="nextPage" class="btn-secondary" type="button">Siguiente</button>
       </div>
     </section>
+    </div>
+
+    <!-- Vista Chequeo de Datos -->
+    <div id="viewCheck" class="view-section hidden">
+      <section class="kpi-grid" aria-label="Indicadores de completitud">
+        <div class="card kpi-card">
+          <span class="kpi-label">Completitud Capítulos</span>
+          <strong id="checkKpiEpPct" class="kpi-value">—</strong>
+        </div>
+        <div class="card kpi-card">
+          <span class="kpi-label">Capítulos incompletos</span>
+          <strong id="checkKpiEpInc" class="kpi-value">—</strong>
+        </div>
+        <div class="card kpi-card">
+          <span class="kpi-label">Completitud Series</span>
+          <strong id="checkKpiSerPct" class="kpi-value">—</strong>
+        </div>
+        <div class="card kpi-card">
+          <span class="kpi-label">Series incompletas</span>
+          <strong id="checkKpiSerInc" class="kpi-value">—</strong>
+        </div>
+      </section>
+
+      <section class="card table-section">
+        <div class="table-toolbar">
+          <div class="tabs">
+            <button type="button" class="check-tab-btn tab-btn active" data-entity="episodes">Capítulos (<span id="checkCountEp">0</span>)</button>
+            <button type="button" class="check-tab-btn tab-btn" data-entity="series">Series (<span id="checkCountSer">0</span>)</button>
+            <button type="button" class="check-tab-btn tab-btn" data-entity="temporadas">Temporadas (<span id="checkCountTemp">0</span>)</button>
+          </div>
+          <div class="check-controls">
+            <input id="checkSearch" type="search" placeholder="Buscar código o nombre..." class="check-input" />
+            <select id="checkTipoProd" class="check-select">
+              <option value="">Todos los tipos de prod.</option>
+            </select>
+            <div class="check-slider-wrap">
+              <span id="checkYearLabel" class="year-range-badge">Todos los años</span>
+              <div id="checkYearSlider" class="year-slider"></div>
+              <input id="checkYearMin" type="hidden" />
+              <input id="checkYearMax" type="hidden" />
+            </div>
+            <select id="checkFieldFilter" class="check-select">
+              <option value="">Todos los incompletos</option>
+              <option value="Año">Sin Año</option>
+              <option value="Duración">Sin Duración</option>
+              <option value="Temáticas">Sin Temáticas</option>
+              <option value="País">Sin País</option>
+              <option value="Productora">Sin Productora</option>
+              <option value="Formato">Sin Formato</option>
+              <option value="Técnica">Sin Técnica</option>
+              <option value="Edades">Sin Edades</option>
+              <option value="URL web">Publicado sin URL</option>
+            </select>
+            <label class="checkbox-label check-toggle">
+              <input id="checkOnlyPublished" type="checkbox" />
+              <span>Solo publicados</span>
+            </label>
+            <button id="btnExportCheckCsv" class="btn-secondary" type="button">Exportar pendientes CSV</button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead id="checkTableHead"></thead>
+            <tbody id="checkTableBody"></tbody>
+          </table>
+        </div>
+
+        <div class="pagination">
+          <button id="checkPrevPage" class="btn-secondary" type="button">Anterior</button>
+          <span id="checkPageInfo">Página 1</span>
+          <button id="checkNextPage" class="btn-secondary" type="button">Siguiente</button>
+        </div>
+      </section>
+    </div>
   </main>
 
   <script src="app.js"></script>
