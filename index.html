@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CNTV Infantil — Explorador de Catálogo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div>
+        <h1>CNTV Infantil · Explorador de Catálogo</h1>
+        <p class="subtitle">Análisis de series, capítulos, temáticas y producción para decisiones editoriales</p>
+      </div>
+      <div class="topbar-meta">
+        <span id="dataUpdated" class="badge-muted">Cargando datos...</span>
+        <button id="btnReset" class="btn-secondary" type="button">Limpiar filtros</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Filtros -->
+    <section class="filters-panel card" aria-label="Filtros de exploración">
+      <div class="filters-grid">
+        <div class="filter-group filter-search">
+          <label for="searchInput">Buscar por título, etiqueta o productora</label>
+          <input id="searchInput" type="search" placeholder="Ej: naturaleza, historia, animación, DW..." />
+        </div>
+
+        <div class="filter-group">
+          <label>Año de producción</label>
+          <div class="year-range">
+            <input id="yearMin" type="number" min="1990" max="2030" aria-label="Año desde" />
+            <span>a</span>
+            <input id="yearMax" type="number" min="1990" max="2030" aria-label="Año hasta" />
+          </div>
+          <div class="presets">
+            <button type="button" class="chip-btn" data-range="all">Todo</button>
+            <button type="button" class="chip-btn" data-range="2015-2019">2015–2019</button>
+            <button type="button" class="chip-btn" data-range="2010-2014">2010–2014</button>
+            <button type="button" class="chip-btn" data-range="1991-2009">1991–2009</button>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <label for="temaSelect">Temática</label>
+          <select id="temaSelect">
+            <option value="">Todas las temáticas</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="edadSelect">Público / Edad</label>
+          <select id="edadSelect">
+            <option value="">Todas las edades</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="formatoSelect">Formato</label>
+          <select id="formatoSelect">
+            <option value="">Todos los formatos</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="tecnicaSelect">Técnica</label>
+          <select id="tecnicaSelect">
+            <option value="">Todas las técnicas</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="paisSelect">País de origen</label>
+          <select id="paisSelect">
+            <option value="">Todos los países</option>
+          </select>
+        </div>
+
+        <div class="filter-group filter-toggle">
+          <label class="checkbox-label">
+            <input id="onlyPublished" type="checkbox" />
+            <span>Solo publicados en web</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="prod-type-bar">
+        <span class="prod-label">Tipo de producción:</span>
+        <div id="tipoProdPills" class="pills-row"></div>
+      </div>
+    </section>
+
+    <!-- KPIs -->
+    <section class="kpi-grid" aria-label="Indicadores principales">
+      <div class="card kpi-card">
+        <span class="kpi-label">Series</span>
+        <strong id="kpiSeries" class="kpi-value">—</strong>
+      </div>
+      <div class="card kpi-card">
+        <span class="kpi-label">Capítulos y Cápsulas</span>
+        <strong id="kpiEpisodes" class="kpi-value">—</strong>
+      </div>
+      <div class="card kpi-card">
+        <span class="kpi-label">Horas de contenido</span>
+        <strong id="kpiHours" class="kpi-value">—</strong>
+      </div>
+      <div class="card kpi-card">
+        <span class="kpi-label">Publicados en web</span>
+        <strong id="kpiPublished" class="kpi-value">—</strong>
+      </div>
+    </section>
+
+    <!-- Gráficos -->
+    <section class="charts-grid">
+      <div class="card chart-card chart-wide">
+        <div class="chart-header">
+          <h2>Producción por año y tipo</h2>
+          <span class="chart-hint">Capítulos según año de producción</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="chartTimeline"></canvas>
+        </div>
+      </div>
+
+      <div class="card chart-card">
+        <div class="chart-header">
+          <h2>Temáticas principales (Top 12)</h2>
+          <span class="chart-hint">Haz clic en una barra para filtrar</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="chartTemas"></canvas>
+        </div>
+      </div>
+
+      <div class="card chart-card">
+        <div class="chart-header">
+          <h2>Público por rango de edad</h2>
+          <span class="chart-hint">Distribución de capítulos</span>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="chartEdades"></canvas>
+        </div>
+      </div>
+
+      <div class="card chart-card">
+        <div class="chart-header">
+          <h2>Formato</h2>
+        </div>
+        <div class="chart-wrap chart-wrap-sm">
+          <canvas id="chartFormato"></canvas>
+        </div>
+      </div>
+
+      <div class="card chart-card">
+        <div class="chart-header">
+          <h2>Técnica y Países (Top 8)</h2>
+        </div>
+        <div class="split-charts">
+          <div class="chart-wrap chart-wrap-sm">
+            <canvas id="chartTecnica"></canvas>
+          </div>
+          <div class="chart-wrap chart-wrap-sm">
+            <canvas id="chartPaises"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tabla exploratoria -->
+    <section class="card table-section">
+      <div class="table-toolbar">
+        <div class="tabs">
+          <button type="button" class="tab-btn active" data-tab="series">Por Series (<span id="countSeriesTab">0</span>)</button>
+          <button type="button" class="tab-btn" data-tab="episodes">Por Capítulos (<span id="countEpisodesTab">0</span>)</button>
+        </div>
+        <button id="btnExportCsv" class="btn-secondary" type="button">Exportar CSV</button>
+      </div>
+
+      <div class="table-wrap">
+        <table id="dataTable">
+          <thead id="tableHead"></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+
+      <div class="pagination">
+        <button id="prevPage" class="btn-secondary" type="button">Anterior</button>
+        <span id="pageInfo">Página 1</span>
+        <button id="nextPage" class="btn-secondary" type="button">Siguiente</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
